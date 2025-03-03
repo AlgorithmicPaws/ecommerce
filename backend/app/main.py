@@ -4,11 +4,11 @@ from typing import Optional, List
 from pydantic import BaseModel
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from models import Session, Users, Orders, Products, Merchants, OrderItems
 from sqlmodel import select
 from datetime import datetime, timedelta
-from schemas import UserCreate, UserOut, Token, OrderCreate, OrderItemCreate, ProductCreate, MerchantCreate
-from db import engine, init_db
+from app.schemas import UserCreate, UserOut, Token, OrderCreate, OrderItemCreate, ProductCreate, MerchantCreate
+from app.db import engine, init_db
+from app.models import Session, Users, Orders, Products, Merchants, OrderItems
 
 app = FastAPI()
 init_db()

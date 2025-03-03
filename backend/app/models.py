@@ -39,7 +39,6 @@ class Products(SQLModel, table=True):
     price: Optional[int]
     status: Optional[str]
     created_at: Optional[str]
-    category_id: Optional[int] = Field(foreign_key="categories.id")
 
     order_items: List["OrderItems"] = Relationship(back_populates="product")
     merchant: "Merchants" = Relationship(back_populates="products")
