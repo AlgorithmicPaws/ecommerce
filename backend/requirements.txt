@@ -1,8 +1,9 @@
-fastapi
+fastapi[standard]
 psycopg2-binary
 pydantic
 SQLAlchemy
 sqlalchemy2-stubs
 sqlmodel
 uvicorn
-passlib 
+passlib
+python-jose
