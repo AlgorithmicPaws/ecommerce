@@ -1,30 +1,77 @@
-import { Link } from "react-router-dom";
-import InputField from "../components/ui/InputField";
-import SubmitButton from "../components/ui/SubmitButton";
-import { FaUserCircle } from "react-icons/fa";
-function Login(){
-    return(
-        <main className="flex justify-center items-center h-screen bg-gray-100">
-            <section 
-                className="bg-white p-8 rounded-lg shadow-md 
-                        w-11/12 sm:w-10/12 md:w-8/12 lg:w-6/12
-                        h-10/12 flex flex-col items-center"
-            >
-                <FaUserCircle className="text-6xl mb-2"/>
-                <h1 className="text-xl font-bold">Iniciar Sesión</h1>
-                <form action="" className="mt-4 flex flex-col gap-10 justify-center items-center w-9/12">
-                    <InputField label="Correo Electrónico" type="text" name="email" placeholder="example@mail.com"/>
-                    <InputField label="Contraseña" type="password" name="password"/>
-                    <SubmitButton text="Iniciar Sesión" className="w-4/5 mt-5 bg-blue-500 hover:bg-blue-600"/>
-                    <p className="mt-4 text-sm text-gray-600">
-                    ¿No tienes una cuenta? 
-                    <Link to="/register" className="text-blue-500 hover:underline ml-1">
-                        Regístrate aquí
-                    </Link>
-                </p>
-                </form>
-            </section> 
-        </main>
-    );
-}
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import '../styles/Login.css';
+
+const Login = () => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    // Simulamos una petición al servidor
+    setTimeout(() => {
+      // Aquí implementarías la lógica real de autenticación
+      console.log('Datos de login:', formData);
+      
+      // Simulamos una respuesta exitosa y redirigimos al perfil
+      setIsLoading(false);
+      navigate('/profile');
+    }, 1500); // Simulamos un retraso de 1.5 segundos para mostrar el estado de carga
+  };
+
+  return (
+    <div className="login-container">
+      <div className="login-card">
+        <h1>Iniciar Sesión</h1>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <input
+              type="email"
+              name="email"
+              placeholder="Correo electrónico"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="password"
+              name="password"
+              placeholder="Contraseña"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <button 
+            type="submit" 
+            className={`submit-btn ${isLoading ? 'loading' : ''}`}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+          </button>
+        </form>
+        <p className="register-link">
+          ¿No tienes una cuenta? <Link to="/register">Regístrate aquí</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
 export default Login;
