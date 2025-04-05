@@ -11,6 +11,9 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
     description: '',
     image: null
   });
+  
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Si hay un producto existente, inicializar el formulario con sus datos
   useEffect(() => {
@@ -18,14 +21,42 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
       setFormData({
         id: product.id,
         name: product.name,
-        price: product.price,
-        stock: product.stock,
+        price: product.price.toString(),
+        stock: product.stock.toString(),
         category: product.category,
         description: product.description || '',
         image: product.image
       });
     }
   }, [product]);
+
+  // Validar el formulario
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre del producto es obligatorio';
+    }
+    
+    if (!formData.price.trim()) {
+      newErrors.price = 'El precio es obligatorio';
+    } else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
+      newErrors.price = 'El precio debe ser un número positivo';
+    }
+    
+    if (!formData.stock.trim()) {
+      newErrors.stock = 'El stock es obligatorio';
+    } else if (isNaN(parseInt(formData.stock)) || parseInt(formData.stock) < 0) {
+      newErrors.stock = 'El stock debe ser un número positivo o cero';
+    }
+    
+    if (!formData.category) {
+      newErrors.category = 'La categoría es obligatoria';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Manejar cambios en los campos del formulario
   const handleChange = (e) => {
@@ -34,6 +65,14 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
       ...prev,
       [name]: value
     }));
+    
+    // Limpiar error cuando el usuario escribe
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
   };
 
   // Manejar cambio de imagen
@@ -45,17 +84,29 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
   };
 
   // Manejar envío del formulario
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Convertir a números los campos numéricos
-    const submittedData = {
-      ...formData,
-      price: parseFloat(formData.price),
-      stock: parseInt(formData.stock)
-    };
+    if (!validateForm()) {
+      return;
+    }
     
-    onSave(submittedData);
+    setIsSubmitting(true);
+    
+    try {
+      // Convertir a números los campos numéricos
+      const submittedData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock)
+      };
+      
+      await onSave(submittedData);
+    } catch (error) {
+      console.error('Error al guardar el producto:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -66,6 +117,7 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
           <button 
             className="close-modal"
             onClick={onCancel}
+            disabled={isSubmitting}
           >
             &times;
           </button>
@@ -80,7 +132,10 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                className={errors.name ? 'error' : ''}
+                disabled={isSubmitting}
               />
+              {errors.name && <div className="error-text">{errors.name}</div>}
             </div>
             <div className="form-group">
               <label>Categoría</label>
@@ -89,12 +144,15 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
                 value={formData.category}
                 onChange={handleChange}
                 required
+                className={errors.category ? 'error' : ''}
+                disabled={isSubmitting}
               >
                 <option value="">Seleccionar categoría</option>
                 {categories.map((category, index) => (
                   <option key={index} value={category}>{category}</option>
                 ))}
               </select>
+              {errors.category && <div className="error-text">{errors.category}</div>}
             </div>
           </div>
           <div className="form-row">
@@ -108,7 +166,10 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
                 value={formData.price}
                 onChange={handleChange}
                 required
+                className={errors.price ? 'error' : ''}
+                disabled={isSubmitting}
               />
+              {errors.price && <div className="error-text">{errors.price}</div>}
             </div>
             <div className="form-group">
               <label>Stock</label>
@@ -119,7 +180,10 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
                 value={formData.stock}
                 onChange={handleChange}
                 required
+                className={errors.stock ? 'error' : ''}
+                disabled={isSubmitting}
               />
+              {errors.stock && <div className="error-text">{errors.stock}</div>}
             </div>
           </div>
           <div className="form-group">
@@ -129,6 +193,7 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
               value={formData.description}
               onChange={handleChange}
               rows="3"
+              disabled={isSubmitting}
             ></textarea>
           </div>
           <div className="form-group">
@@ -136,18 +201,27 @@ const ProductForm = ({ product, onSave, onCancel, categories, title }) => {
             <ProductImage 
               image={formData.image}
               onChange={handleImageChange}
+              disabled={isSubmitting}
             />
+            <small className="form-text text-muted">
+              Nota: Por ahora, las imágenes se almacenan directamente en la base de datos. En un entorno de producción, se recomienda utilizar un servicio de almacenamiento como AWS S3.
+            </small>
           </div>
           <div className="modal-actions">
             <button 
               type="button" 
               className="cancel-btn"
               onClick={onCancel}
+              disabled={isSubmitting}
             >
               Cancelar
             </button>
-            <button type="submit" className="save-btn">
-              {product ? 'Actualizar Producto' : 'Guardar Producto'}
+            <button 
+              type="submit" 
+              className="save-btn"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Guardando...' : product ? 'Actualizar Producto' : 'Guardar Producto'}
             </button>
           </div>
         </form>
