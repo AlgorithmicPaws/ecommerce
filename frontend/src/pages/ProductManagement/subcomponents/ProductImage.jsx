@@ -1,29 +1,19 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { handleProductImageUpload, resolveFileUrl } from '../../../services/fileStorageService';
+import { handleProductImageUpload, getImageUrl } from '../../../services/fileService';
 
-const ProductImage = ({ image, onChange, disabled = false }) => {
+const ProductImage = ({ image, onChange, category, productId = 'new', disabled = false }) => {
   const fileInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [displayImage, setDisplayImage] = useState(null);
+  const [displaySrc, setDisplaySrc] = useState(null);
   
-  // Resolve the image URL to a displayable URL when it changes
+  // Update display source when image path changes
   useEffect(() => {
-    const loadImage = async () => {
-      if (image) {
-        try {
-          const resolvedUrl = await resolveFileUrl(image);
-          setDisplayImage(resolvedUrl);
-        } catch (err) {
-          console.error('Error resolving image URL:', err);
-          setDisplayImage(image); // Fallback to original URL
-        }
-      } else {
-        setDisplayImage(null);
-      }
-    };
-    
-    loadImage();
+    if (image) {
+      setDisplaySrc(getImageUrl(image));
+    } else {
+      setDisplaySrc(null);
+    }
   }, [image]);
 
   const handleFileChange = async (e) => {
@@ -33,13 +23,18 @@ const ProductImage = ({ image, onChange, disabled = false }) => {
     setError(null);
     
     try {
-      if (e.target.files && e.target.files[0]) {
-        const imageUrl = await handleProductImageUpload(e);
-        onChange(imageUrl);
+      // Upload the image to the server
+      const imagePath = await handleProductImageUpload(e, category, productId);
+      if (imagePath) {
+        // Return the path to the parent component
+        onChange(imagePath);
+        
+        // Update display source for preview
+        setDisplaySrc(getImageUrl(imagePath));
       }
     } catch (err) {
-      console.error('Error al cargar la imagen:', err);
-      setError(err.message || 'Error al procesar la imagen. Por favor, intente con otra imagen.');
+      console.error('Error uploading image:', err);
+      setError(err.message || 'Error processing image');
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +50,7 @@ const ProductImage = ({ image, onChange, disabled = false }) => {
     if (disabled) return;
     
     onChange(null);
-    setDisplayImage(null);
+    setDisplaySrc(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -65,34 +60,51 @@ const ProductImage = ({ image, onChange, disabled = false }) => {
   return (
     <div className="image-upload-container">
       <div 
-        className={`image-preview ${disabled ? 'disabled' : ''}`} 
+        className="image-preview" 
         onClick={triggerFileInput}
-        style={{ position: 'relative', cursor: disabled ? 'not-allowed' : 'pointer' }}
+        style={{ 
+          position: 'relative', 
+          height: '200px', 
+          border: '1px dashed #ccc',
+          borderRadius: '5px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          cursor: disabled ? 'not-allowed' : 'pointer'
+        }}
       >
         {isLoading ? (
-          <div className="loading-spinner" style={{ margin: 'auto' }}></div>
-        ) : displayImage ? (
-          <div className="image-preview-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
-            <img src={displayImage} alt="Vista previa" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <div className="loading-spinner" style={{ margin: 'auto' }}>Loading...</div>
+        ) : displaySrc ? (
+          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <img 
+              src={displaySrc} 
+              alt="Product preview" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain' 
+              }} 
+            />
             {!disabled && (
               <button 
                 type="button" 
-                className="remove-image-btn"
                 onClick={clearImage}
                 style={{
                   position: 'absolute',
                   top: '5px',
                   right: '5px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                  border: 'none',
+                  width: '30px',
+                  height: '30px',
                   borderRadius: '50%',
-                  width: '25px',
-                  height: '25px',
+                  background: 'rgba(255,255,255,0.7)',
+                  border: 'none',
+                  fontSize: '18px',
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  fontSize: '16px'
+                  justifyContent: 'center'
                 }}
               >
                 ×
@@ -100,14 +112,14 @@ const ProductImage = ({ image, onChange, disabled = false }) => {
             )}
           </div>
         ) : (
-          <div className="image-placeholder" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <span>{disabled ? 'Imagen no disponible' : 'Haz clic para subir imagen'}</span>
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            {disabled ? 'No image available' : 'Click to upload image'}
           </div>
         )}
       </div>
       
       {error && (
-        <div className="error-text" style={{ marginTop: '5px' }}>
+        <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '5px' }}>
           {error}
         </div>
       )}
@@ -121,8 +133,8 @@ const ProductImage = ({ image, onChange, disabled = false }) => {
         disabled={disabled}
       />
       
-      <div className="image-upload-help" style={{ marginTop: '5px', fontSize: '0.8rem', color: '#666' }}>
-        Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 5MB
+      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+        Accepted formats: JPG, PNG, GIF. Max size: 5MB
       </div>
     </div>
   );

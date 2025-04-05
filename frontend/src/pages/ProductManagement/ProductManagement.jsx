@@ -6,6 +6,7 @@ import ProductsTable from './components/ProductsTable';
 import ProductForm from './components/ProductForm';
 import ConfirmationModal from './subcomponents/ConfirmationModal';
 import * as productService from '../../services/productService';
+import { getImageUrl } from '../../services/fileService';
 import '../../styles/ProductManagement.css';
 
 const ProductManagement = () => {
@@ -44,6 +45,15 @@ const ProductManagement = () => {
     }
   }, [isAuthenticated, isSeller, navigate]);
 
+  // Procesar productos para asegurar que las imágenes tengan URLs completas
+  const processProductImages = (products) => {
+    return products.map(product => ({
+      ...product,
+      // Asegurar que la imagen tenga la URL completa para acceder desde el backend
+      image: product.image ? getImageUrl(product.image) : null
+    }));
+  };
+
   // Cargar productos y categorías
   useEffect(() => {
     const loadData = async () => {
@@ -61,9 +71,12 @@ const ProductManagement = () => {
         const productsData = await productService.getSellerProducts();
         
         // Transformar datos de la API al formato del componente
-        const transformedProducts = productsData.map(product => 
+        let transformedProducts = productsData.map(product => 
           productService.transformApiProduct(product)
         );
+        
+        // Procesar las imágenes para asegurar que tengan URLs completas
+        transformedProducts = processProductImages(transformedProducts);
         
         setProducts(transformedProducts);
         setFilteredProducts(transformedProducts);
@@ -156,7 +169,13 @@ const ProductManagement = () => {
       const response = await productService.createProduct(dataWithCategoryIds);
       
       // Transformar respuesta de la API al formato del componente
-      const newProduct = productService.transformApiProduct(response);
+      let newProduct = productService.transformApiProduct(response);
+      
+      // Asegurar URL completa para la imagen
+      newProduct = {
+        ...newProduct,
+        image: newProduct.image ? getImageUrl(newProduct.image) : null
+      };
       
       // Actualizar estado local
       setProducts([...products, newProduct]);
@@ -188,8 +207,13 @@ const ProductManagement = () => {
       }
       
       // Actualizar estado local
+      const updatedProduct = {
+        ...productData,
+        image: productData.image ? getImageUrl(productData.image) : null
+      };
+      
       const updatedProducts = products.map(product => 
-        product.id === productData.id ? productData : product
+        product.id === productData.id ? updatedProduct : product
       );
       
       setProducts(updatedProducts);
