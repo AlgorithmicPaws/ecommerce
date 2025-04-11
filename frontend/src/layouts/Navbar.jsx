@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../pages/CartContext';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Navbar.css';
+import logo from '../assets/logoConstructora.png';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -75,7 +76,8 @@ const Navbar = () => {
         <div className="navbar-top">
           <div className="logo-container">
             <Link to="/" className="logo">
-              ConstructMarket
+              <img src={logo} alt="Logo" className="logo-image" /> 
+              <span className="logo">SCM Constructora</span>        
             </Link>
           </div>
           
