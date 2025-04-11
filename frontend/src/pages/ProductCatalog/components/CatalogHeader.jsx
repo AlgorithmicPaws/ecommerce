@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../../pages/CartContext';
 import SearchBar from '../subcomponents/SearchBar';
+import logo from '../../../assets/logoConstructora.png';
 
 const CatalogHeader = ({ onSearch, onGoToCart }) => {
   const { totalItems } = useCart();
@@ -9,8 +10,11 @@ const CatalogHeader = ({ onSearch, onGoToCart }) => {
   return (
     <header className="catalog-header">
       <div className="header-top">
-        <div className="logo">
-          <Link to="/">ConstructMarket</Link>
+        <div className="logo-container">
+          <Link to="/" className="logo">
+            <img src={logo} alt="Logo" className="logo-image" /> 
+            <span className="logo">SCM Constructora</span>        
+          </Link>
         </div>
         <SearchBar 
           onSearch={onSearch} 
